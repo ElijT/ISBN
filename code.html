@@ -1,0 +1,162 @@
+
+ 
+<!DOCTYPE HTML>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8">
+
+</head>
+<body>
+
+			<article id="content">
+
+
+
+
+
+<h2>Récupérer des informations sur un livre à partir de l'ISBN</h2>
+<h3>Les principes généraux</h3>
+
+<div align="center"><img src="images/book_schema.png"></div>
+
+<p>Pour créer une base de données de livres pour des besoins personnels, j'ai eu besoin de récupérer des méta-données à partir de différentes bases de données afin d'en faciliter la saisie. Mon but était d'avoir accès à un maximum de données de manières automatique afin de faciliter l'expérience utilisateur et éviter que les trois quarts des champs restent vide.</p>
+
+<p>Pour cela, il a fallu identifier les informations qui m'intéressaient. J'ai donc essayé d'être complet sans être trop exigeant afin d'avoir une haute probabilité que tous les champs soient remplis. J'ai donc établi la liste suivante :</p>
+<ul class="padd">
+<li>l'ISBN ;</li>
+<li>le titre ;</li>
+<li>les auteurs ;</li>
+<li>la couverture ;</li>
+<li>l'éditeur ;</li>
+<li>l'année de parution ;</li>
+<li>le nombre de pages ;</li>
+<li>une courte description ;</li>
+<li>l'identifiant google books ;</li>
+<li>l'ASIN (identifiant amazon).</li>
+</ul>
+<p>Pour moi, la couverture est très importante car elle permet d'identifier un livre de manière visuelle. </p>
+<p>Sur le plan technique, j'ai codé l'ensemble avec PHP, et la librairie <a hef="https://jquery.com/">jQuery</a>. Mes connaissances techniques étant limitées, surtout en javascript et le reste de mon site était déjà codé avec ces éléments (la partie SQL étant inutile ici). La possibilité de faire des requêtes asynchrones de javascript (AJAX) est en effet très intéressante.</p>
+<p>Une fois les besoins identifiés, j'ai rapidement vu que consulter une seule base de donnée via une unique API n'allait probablement pas suffire. En effet, les livres de la collection combinent des livres anglo-saxons et français, sont plutôt réservés à un public de niche, et la date de parution peut remonter à plusieurs dizaines d'années. De plus, j'ai rapidement vu que Worldcat allait être la base la plus complète et la plus fiable, mais sans couverture, tandis qu'Amazon propose les couvertures, mais les données sont beaucoup moins fiables et Google books est un peu entre les deux. L'interrogation d'une unique base de donnée est abondamment traitée sur internet, cependant, les sujets sur l'interrogation de multiples bases pour combiner leurs puissances respectives ne sont pas légion.</p>
+<h3>Le code</h3>
+<p>Vous pouvez télécharger <a href="book/book_isbn.zip">le code source</a>. Il contient :
+<ul class="padd"><li>add_livres.html : La page html qui permet de lancer la requête ;</li>
+<li>add_livres.js : le code javascript pour pour faire les requêtes AJAX, traiter la requête Google books, combiner les résultats, afficher le résultat final et les trois résultats intermédiaires -- il est possible ou non d'afficher l'URL des pages interrogées. Pour un nombre de requêtes illimité, il faut mettre votre clé pour l'API google (normalement, c'est mal car elle est visible par tous) ;</li>
+<li>worldcat.php : le script pour faire la requête worldcat et l'analyser. Il faut mettre votre clé worldcat (il faut s'inscrire <a href="https://worldcat.authn.worldcat.org/login/manageduser-ui/cmnd/useraction/login?acsURL=https%3A%2F%2Fauthn.sd00.worldcat.org%2Fwayf%2Fmetaauth-ui%2Fcmnd%2Fprotocol%2Facs%2Fsaml2&controllerMethod=samlpost">ici</a>). (Attention, pour obtenir une clé worldcat, il faut avoir rempli votre nom lors de l'inscription, sinon il y a une erreur lors de la demande de clé) ; </li>
+<li>amazon.php : le script amazon : il faut mettre votre <a href="https://www.spiralscripts.co.uk/FAQ/how-to-get-an-access-key-for-amazon-web-services-product-advertising-api.html">clé publique, votre identifiant</a> (sans passer par IAM !) et votre <a href="http://docs.aws.amazon.com/AWSECommerceService/latest/DG/becomingAssociate.html">AssociateTag</a>.</li></ul></p>
+
+<h2>Le résultat</h2>
+<p>Voilà <a href="books/Ajouter-un-livre.html">une page statique du résultat</a>, le principe est de taper l'ISBN. Ensuite, via javascript, il est envoyé à trois bases de données avec des API différentes, et pour finir, je combine les trois résultats pour proposer l'ajout du livre avec tous les renseignements. Pour la qualité des informations, en général, je choisis worldcat pour les méta-données, Amazon pour la couverture et Google Books pour la description. Sur cet exemple, on voit bien que séparément, aucune base de donnée n'est capable de donner toutes les données requises mais qu'ensemble, elles donnent un résultat complet et cohérent.</p>
+
+<p>Et voilà <a href="bibliotheque.php">un exemple de page de type bibliothèque (2 Mo)</a> avec environ 350 livres que l'on peut obtenir après avoir ajouté des livres dans notre base de données, le tout avec des micro-données suivant la syntaxe <a href="https://schema.org/">schema.org</a>. L'ajout des livres m'a pris 2 soirées car je ne voulais pas automatiser le processus afin d'être sûr de la qualité des entrées que j'avais et car j'avais dépassé mon quota de requête en une journée sur WorldCat.</p>
+
+
+<h2>Les bases de données</h2>
+<p>Les livres concernés pour mon application sont des livres pour un concours de chimie, il y a donc des livres de cours, des livres en français ainsi que des livres en anglais. De plus la plupart de ces livres sont des livres "de niche" avec un faible tirage. Une seule base de donnée n'est pas suffisante pour avoir toutes les données voulues : soit le livre peut être manquant, soit il manque la couverture. J'ai donc commencé par <a href="https://developers.google.com/books/docs/v1/using">l'API google books</a> qui a été la plus simple à traiter. Ensuite, je me suis tourné vers la base de données de Worldcat, beaucoup plus complète que celle de Google. Pour finir, j'ai également pris l'API d'amazon pour les couvertures de livre. Les données sur Amazon sont moins fiables mais la base de donnée est également très complète.</p>
+
+
+<h3>L'API google books</h3>
+<p>Je suis parti du site <a href="http://code18.blogspot.fr/2011/06/recuperer-des-informations-dun-livre.html">code 18</a> pour avoir une base de script. Une fois que l'on a les paramètres pour faire une requête, il est facile de faire des requêtes. Google envoie un résultat sous forme JSON. Il a ensuite été simple de récupérer les données à partir du résultat, de plus, comme l'ISBN est un identifiant unique, on a généralement un unique résultat. Bref, ça a été super simple.</p>
+
+
+<ul>
+<li>Les points positifs :
+<ul class="padd"><li>La simplicité de mise en œuvre ;</li>
+<li>Les résultats directement en JSON donc facilement exploitable ;</li>
+<li>Pas d'identifiants ou d'inscription nécessaire ;</li>
+<li>Accepte les requêtes cross-domain (CORS) ;</li>
+<li>Une description brève disponible pour leurs livres ;</li>
+<li>Nombre de requête illimité si on prend une clé.</li></ul></li>
+<li>Les points négatifs :
+<ul class="padd">
+<li>La fiabilité des informations ;</li>
+<li>Encore beaucoup de livres manquants.</li>
+</ul></li>
+
+</ul>
+
+<h3>L'API Worldcat</h3>
+<p>Pour l'API Worlcat, mon plus gros souci a été la non possibilité de faire des requêtes cross-domain. Du coup j'ai été bloqué pendant un certain temps à comprendre que CORS n'était pas activé par Worldcat et donc que je ne pouvais pas me contenter d'une requête en AJAX. En plus de cela, après avoir compris qu'il fallait un script php pour faire la requête, il a fallu comprendre comment la fonction <code class="language-php">simplexml_load_file</code> convertit le fichier XML retourné en tableau.</p>
+
+<ul>
+<li>Les points positifs :
+<ul class="padd">
+<li>La base de données très complète ;</li>
+<li>La gratuité totale et l'esprit du libre ;</li>
+<li>Les livres anglo-saxons ;</li>
+<li>La documentation très complète sur <a href="http://www.loc.gov/marc/bibliographic/">le système MARC21</a> ;</li>
+<li>La richesse des informations (collection, numéro de collection)</li>
+</ul></li>
+<li>Les points négatifs :
+<ul class="padd">
+<li>N'accepte pas les requêtes cross-domain (CORS) donc oblige la création d'un script annexe ;</li>
+<li>La non-uniformisation des données (mais c'est tout de même la base la plus homogène parmi les trois).</li>
+<li>La clé ne dure qu'un an.</li>
+</ul></li>
+
+</ul>
+
+<h3>L'API d'amazon</h3>
+<p>Pour amazon, comme beaucoup de personnes l'utilise aussi, c'est très facile de trouver de l'aide, mais la soumission des requêtes est un peu plus technique, heureusement, je suis tombé sur <a href="http://www.brandonchecketts.com/archives/2009/06">cette page</a> pour avoir l'obtention de la signature sans trop me casser la tête. Le plus compliqué est de s'y retrouver parmi les possibilités pour les identifiants, l'IAM inutile, la nécessité d'avoir aussi un compte affilié, bref, plus les petites tracasseries liées à la création de multiples comptes que des difficultés techniques.</p>
+<ul>
+<li>Les points positifs :
+<ul class="padd">
+<li>Les couvertures de livre à gogo et dans toutes les dimensions ;</li>
+<li>La base de données très complète ;</li>
+<li><a href="http://docs.aws.amazon.com/AWSECommerceService/latest/DG/EX_LookupbyISBN.html">La documentation</a> assez bien fournie ;</li>
+</ul></li>
+<li>Les points négatifs :
+<ul class="padd">
+<li>Les informations qui sont en général de mauvaise qualité (auteurs en particulier)</li>
+<li>Les tracasseries pratiques : la nécessité d'avoir un compte AWS, mais pas besoin d'IAM, mais d'avoir un compte affilié ;</li>
+<li>Le côté commercial : la nécessité de donner son numéro de carte bleue pour un compte AWS même si c'est gratuit.</li>
+<li>Le côté commercial une deuxième fois : la nécessité de faire des rétroliens publicitaires avec le compte "associates" pour qu'il reste ouvert.</li>
+<li>La complexité pour avoir une signature qui marche.</li>
+</ul></li>
+</ul><br><br>
+
+<h2>Du synchrone et de l'asynchrone</h2>
+<p>Une fois les données récupérées via les différents canaux, il faut ensuite les compiler pour proposer une entrée complète. Mais... les requêtes AJAX étant asynchrones, il faut attendre qu'elles soient toutes finies avant de pouvoir les traiter. Ce problème est magnifiquement illustré par le gif animé ci-contre. Je me suis donc battu pour avoir un traitement asynchrone des données. J'ai d'abord cru que c'était un problème de closure, puis de callback, et au final, j'ai utilisé des <em>deferred objects</em> si j'ai bien compris. Heureusement, pour y voir un peu plus clair, je suis tombé sur <a href="http://stackoverflow.com/questions/14220321/how-to-return-the-response-from-an-asynchronous-call">cette page de Stackoverflow</a> qui m'a permis de découvrir <a href="https://api.jquery.com/jquery.when/">la magnifique fonction</a> <code class="language-javascript">$.when()</code> de jQuery.</p>
+<div align="center">
+<img src="http://www.gifbin.com/bin/102011/1317664598_kid_vs_water_hose.gif" alt="Synchrone vs asyncrone"></div>
+
+<h2>Conclusion</h2>
+<p>Ici, je vous ai présenté la preuve de la mise en œuvre des requêtes de méta-données. Bien évidemment, ensuite, il faut gérer l'ajout dans une base de données via SQL. J'ai également fait quelques améliorations dans mon code final :
+<ul class="padd">
+<li>J'ai transformé les différents données en champs cliquables afin de pouvoir faire de l'édition directe du résultat si nécessaire.</li>
+<li>J'ai également ajouté une requête afin de savoir si le livre a déjà été entré dans la base de données afin d'éviter les doublons.</li>
+<li>etc.</li></ul> 
+Pour finir, la limitation reste l'inhomogénéité des entrées. Il faut toujours corriger un peu pour éviter le principe du <em>garbage in garbage out</em>. Mais c'est inhérent à l'automatisation et le travail est grandement simplifié.</p>
+		
+	
+		<a href="#gocontent" class="right_2"><img src="images/top.png" alt="Go to top"></a>			
+		
+		
+<!-- Placez cette balise là où vous souhaitez positionner le bouton +1. -->
+<div class="g-plusone" data-size="small" data-annotation="inline" data-width="120" data-href="http://agregationchimie.free.fr/book_isbn.php"></div>
+
+
+
+
+<!-- Placez cet appel d'affichage à l'endroit approprié. -->
+<script type="text/javascript">
+  window.___gcfg = {lang: 'fr'};
+
+  (function() {
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+    po.src = 'https://apis.google.com/js/plusone.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+</script>			
+	</article>
+	
+	
+</div>
+
+
+
+	
+
+
+</body>
+
+</html>
